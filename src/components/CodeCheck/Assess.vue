@@ -33,64 +33,32 @@
                                             <n-list-item>
                                                 <n-thing class="w-full">
                                                     <template #header-extra>
-                                                        <n-skeleton height="20px" width="50%" value="1"/>
+                                                        <n-space :size="10" :wrap-item="false">
+                                                            <n-skeleton v-if="loading" height="20px" width="50%"
+                                                                        value="1"/>
+                                                            <n-text v-if="!loading">{{ item.title }}</n-text>
+                                                            <n-tag v-if="!loading" :bordered="false" type="info" size="small">
+                                                                {{ item.score }}
+                                                            </n-tag>
+                                                        </n-space>
+
                                                     </template>
                                                     <template #description>
-                                                        <n-skeleton text :repeat="2"/>
-                                                        <n-skeleton text style="width: 60%"/>
+                                                        <n-skeleton v-if="loading" text :repeat="2"/>
+                                                        <n-skeleton v-if="loading" text style="width: 60%"/>
+                                                        <n-text v-else>{{ item.comment }}</n-text>
                                                     </template>
                                                 </n-thing>
                                             </n-list-item>
                                         </n-list>
                                     </transition-group>
-
-                                    <!--                                    <n-list bordered v-show="assesResult.normativeness.show">-->
-                                    <!--                                        <n-list-item>-->
-                                    <!--                                            <n-thing class="thing-title">-->
-                                    <!--                                                <template #header-extra>-->
-                                    <!--                                                    <n-skeleton height="20px" width="50%" value="1"/>-->
-                                    <!--                                                </template>-->
-                                    <!--                                                <template #description>-->
-                                    <!--                                                    <n-skeleton text :repeat="2"/>-->
-                                    <!--                                                    <n-skeleton text style="width: 60%"/>-->
-                                    <!--                                                </template>-->
-                                    <!--                                            </n-thing>-->
-                                    <!--                                        </n-list-item>-->
-                                    <!--                                    </n-list>-->
-                                    <!--                                    <n-list bordered v-show="assesResult.integrity.show">-->
-                                    <!--                                        <n-list-item>-->
-                                    <!--                                            <n-thing class="thing-title">-->
-                                    <!--                                                <template #header-extra>-->
-                                    <!--                                                    <n-skeleton height="20px" width="50%" value="1"/>-->
-                                    <!--                                                </template>-->
-                                    <!--                                                <template #description>-->
-                                    <!--                                                    <n-skeleton text :repeat="2"/>-->
-                                    <!--                                                    <n-skeleton text style="width: 60%"/>-->
-                                    <!--                                                </template>-->
-                                    <!--                                            </n-thing>-->
-                                    <!--                                        </n-list-item>-->
-                                    <!--                                    </n-list>-->
                                 </n-scrollbar>
                             </template>
                         </n-thing>
                     </n-list-item>
                 </n-list>
-                <!--                <n-h5 prefix="bar" type="info">-->
-                <!--                    代码正确性评估:-->
-                <!--                </n-h5>-->
-                <!--                <n-h5 prefix="bar" type="info">-->
-                <!--                    代码完整性评估:-->
-                <!--                </n-h5>-->
-                <!--                <n-h5 prefix="bar" type="info">-->
-                <!--                    代码规范性评估:-->
-                <!--                </n-h5>-->
-
             </n-space>
 
-            <!--            <n-skeleton height="40px" width="33%" value="1"/>-->
-            <!--            <n-skeleton height="40px" width="66%" :sharp="false"/>-->
-            <!--            <n-skeleton height="40px" width="77%"/>-->
-            <!--            <n-skeleton height="40px" width="99%"/>-->
         </n-space>
     </n-space>
 
@@ -138,7 +106,7 @@ var option: EChartsOption;
 let chartDom: HTMLDivElement;
 let myChart;
 const message = useMessage()
-option = {
+option = reactive({
     tooltip: {
         show: true,
         trigger: 'item',
@@ -173,15 +141,14 @@ option = {
             labelLine: {
                 show: false
             },
-            data: [
-                {value: 100, name: '正确性', key: 'correctness'},
-                {value: 79, name: '规范性', key: 'normativeness'},
-                {value: 99, name: '完整性', key: 'integrity'},
-            ]
+            data: []
         }
     ]
-};
-
+});
+// {value: 0, name: '正确性', key: 'correctness'},
+// {value: 0, name: '规范性', key: 'normativeness'},
+// {value: 0, name: '完整性', key: 'integrity'},
+const loading = ref(true)
 const assessResult = reactive({
     correctness: {
         score: 99,
@@ -204,6 +171,22 @@ const assessResult = reactive({
     // 默认都为show状态，只有在myCharts触发mouseover期间为true，其余几个全为false
 })
 
+
+function deepMerge(target, source) {
+    // 遍历对象的key
+    for (let key in source) {
+        // 如果取出值还是一个对象, 就递归调用
+        if (source[key] instanceof Object) {
+            // 拿到新的对象
+            target[key] = deepMerge(target[key], source[key])
+        } else {
+            // 如果不是对象直接赋值
+            target[key] = source[key]
+        }
+    }
+    return target
+}
+
 const doAssess = async (code) => {
     // 做评估操作, 弹出提示信息
     message.warning("正在评估您的代码请稍后······", {
@@ -211,8 +194,23 @@ const doAssess = async (code) => {
     })
     // 发起请求
     const res = await getAssessResult({code: code})
-    console.log(res)
 
+
+    // 合并更新数组内容
+    deepMerge(assessResult, res.assess)
+    // 将数据提供给图表, 先将对象转化为可迭代对象
+    for (const [key, value] of Object.entries(assessResult)) {
+        option.series[0].data.push(
+            {value: value.score, name: value.title, key: key}
+        )
+    }
+    myChart = echarts.init(chartDom, 'light');
+    option && myChart.setOption(option);
+
+    // 取消加载状态
+    loading.value = false
+    console.log(assessResult)
+    // 且换tabs时数据会重载,优化方式是v-show而不是默认的v-if
 }
 const onResize = (dom) => {
     myChart.resize()

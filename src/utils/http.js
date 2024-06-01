@@ -17,9 +17,7 @@ const httpInstance = axios.create({
     timeout: 25000,
 })
 // axios响应式拦截器
-httpInstance.interceptors.response.use(res => {
-        console.log(res)
-    },
+httpInstance.interceptors.response.use(res => res.data,
     e => {
         // 统一错误提示
         console.log(e)
