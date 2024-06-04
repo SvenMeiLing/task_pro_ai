@@ -21,30 +21,30 @@
             </n-tab-pane>
             <n-tab-pane name="assess" tab="代码评估" class="h-full w-full" :display-directive="'show'"
                         :disabled="disabled">
-                <!-- 这是对您程序的评估-->
+                <!--代码评估面版区域-->
                 <n-space class="h-full w-full"
                          align="center" justify="center"
                          :wrap-item="false"
-                         style="border:1px solid red"
                          v-resize="onResize"
                          :wrap="false"
                 >
+                    <!-- 图标区域-->
                     <n-space class="h-full w-1/2" :wrap-item="false">
                         <div id="main" class="w-full h-full"></div>
                     </n-space>
 
+                    <!--评估结果区域-->
                     <n-space vertical class="h-full py-[1.2rem] w-1/2" :wrap-item="false" :size="0">
 
                         <n-space
-                                style="border:1px solid red"
                                 vertical
-                                class="h-full p-1 w-full"
+                                class="h-full p-1 w-full "
                                 :wrap-item="false"
                                 :size="0">
 
                             <n-list hoverable>
                                 <n-list-item class="h-full">
-                                    <n-thing class="h-full"
+                                    <n-thing class="h-full "
                                              content-style="margin-top: 10px;"
                                     >
                                         <template #header-extra>
@@ -55,13 +55,43 @@
 
                                         </template>
                                         <template #description>
-                                            <n-scrollbar style="max-height: 300px">
+                                            <n-scrollbar
+                                                class="h-full
+                                                lg:max-h-[19.5rem]
+                                                xl:max-h-[19.5rem]
+                                                2xl:max-h-[26rem]">
                                                 <transition-group
                                                         enter-active-class="animate__animated animate__fadeIn"
                                                         leave-active-class="animate__animated animate__fadeOut">
                                                     <n-list v-for="(item, index) of assessResult" bordered
                                                             v-show="item.show"
                                                             :key="index">
+                                                        <n-list-item>
+                                                            <n-thing class="w-full">
+                                                                <template #header-extra>
+                                                                    <n-space :size="10" :wrap-item="false">
+                                                                        <n-skeleton v-if="loading" height="20px"
+                                                                                    width="50%"
+                                                                                    value="1"/>
+                                                                        <n-text v-if="!loading">{{
+                                                                            item.title
+                                                                            }}
+                                                                        </n-text>
+                                                                        <n-tag v-if="!loading" :bordered="false"
+                                                                               type="info"
+                                                                               size="small">
+                                                                            {{ item.score }}
+                                                                        </n-tag>
+                                                                    </n-space>
+
+                                                                </template>
+                                                                <template #description>
+                                                                    <n-skeleton v-if="loading" text :repeat="2"/>
+                                                                    <n-skeleton v-if="loading" text style="width: 60%"/>
+                                                                    <n-text v-else>{{ item.comment }}</n-text>
+                                                                </template>
+                                                            </n-thing>
+                                                        </n-list-item>
                                                         <n-list-item>
                                                             <n-thing class="w-full">
                                                                 <template #header-extra>
@@ -95,7 +125,8 @@
                                     </n-thing>
                                 </n-list-item>
                             </n-list>
-                        </n-space>
+                        </n-space
+                                style="bg-">
 
                     </n-space>
                 </n-space>
